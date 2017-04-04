@@ -3,7 +3,7 @@ package com.osama.smsbomber;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.hardware.camera2.params.StreamConfigurationMap;
+
 
 /**
  * Created by bullhead on 4/4/17.
@@ -17,8 +17,7 @@ public class DbHandler extends SQLiteOpenHelper{
     static final String COL1_NAME="phone";
     static final String COL2_NAME="count";
 
-    private SQLiteDatabase mDb;
-    private static final String CREATE_TABLE_QUERY="create table if not exist "+TABLE_NAME
+    private static final String CREATE_TABLE_QUERY="create table "+TABLE_NAME
             + " ( "+ COL1_NAME +" TEXT, "+COL2_NAME + " int );";
 
     public DbHandler(Context ctx){

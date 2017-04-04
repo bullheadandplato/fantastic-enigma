@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
         mRecentListView=(RecyclerView)findViewById(R.id.recent_list);
         mDataSource=new RecentDataSource(this);
         mDataSource.open();
+        mDataSource.fillData();
         mRecentAdapter=new RecentAdapter(this,mDataSource.getModels());
         mRecentListView.setLayoutManager(new LinearLayoutManager(this));
         mRecentListView.setAdapter(mRecentAdapter);

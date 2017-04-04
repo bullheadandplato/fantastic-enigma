@@ -41,7 +41,7 @@ public class RecentAdapter extends RecyclerView.Adapter<RecentAdapter.ViewHolder
 
     @Override
     public int getItemCount() {
-        return 0;
+        return recentModel.size()+1;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder{
