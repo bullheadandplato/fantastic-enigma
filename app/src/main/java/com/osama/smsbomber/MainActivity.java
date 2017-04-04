@@ -4,12 +4,19 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity {
+    private RecyclerView mRecentListView;
+    private RecentAdapter mRecentAdapter;
+    private RecentDataSource mDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +33,16 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+        setUpRecentList();
+    }
+
+    private void setUpRecentList() {
+        mRecentListView=(RecyclerView)findViewById(R.id.recent_list);
+        mDataSource=new RecentDataSource(this);
+        mDataSource.open();
+        mRecentAdapter=new RecentAdapter(this,mDataSource.getModels());
+        mRecentListView.setLayoutManager(new LinearLayoutManager(this));
+        mRecentListView.setAdapter(mRecentAdapter);
     }
 
     @Override
@@ -49,4 +66,5 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
 }
