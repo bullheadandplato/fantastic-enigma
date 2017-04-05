@@ -117,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-        unregisterReceiver(rec);
         super.onStop();
     }
 
@@ -149,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume: binding service");
         bindService(serviceIntent, connection,BIND_ABOVE_CLIENT);
     }
 }

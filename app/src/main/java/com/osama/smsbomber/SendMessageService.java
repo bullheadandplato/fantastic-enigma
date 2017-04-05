@@ -143,6 +143,8 @@ public class SendMessageService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(TAG, "onBind: someone just binded me");
+        launchBroadcast();
         return new LocalBinder();
     }
     private void launchBroadcast(){
