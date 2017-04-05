@@ -1,6 +1,7 @@
 package com.osama.smsbomber;
 
 import android.app.IntentService;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -8,10 +9,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import java.util.HashMap;
+import java.util.Random;
 
 /**
  * Created by bullhead on 4/3/17.
@@ -21,32 +26,51 @@ import android.util.Log;
 public class SendMessageService extends Service {
     private static final String CANCEL="cancel";
     private static final String TAG=SendMessageService.class.getCanonicalName();
+
+    private static SendMessageService instance;
+
+    private boolean isCreated=false;
     private boolean isRunning=true;
+
+    private NotificationManager mNotificationManager;
+    private HashMap<String,Integer> mNotificationsIds;
+    private HashMap<Integer,NotificationCompat.Builder> mAllNotifications;
+    private int notificationIdCount=0;
 
     public SendMessageService() {
         super();
+
     }
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         return START_STICKY;
     }
-    private void showNotification(){
+    private void showNotification(String phone,int count){
+        String action=Long.toString(System.currentTimeMillis());
         registerReceiver(rec,new IntentFilter("SMSBomberFilter"));
         Intent cancelIntent=new Intent(this,IntentService.class);
         cancelIntent.setAction(CANCEL);
-        PendingIntent pendingIntent=PendingIntent.getBroadcast(this,0,new Intent("SMSBomberFilter"),PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent=PendingIntent.getBroadcast(
+                this,
+                new Random().nextInt(),
+                new Intent("SMSBomberFilter").putExtra("phone",phone),
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
 
-        NotificationManager manger=(NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mNotificationManager=(NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder=new NotificationCompat.Builder(SmsBomber.getCtx())
                 .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentText("03454315404 ")
+                .setContentText(phone)
                 .setContentTitle("Sending message")
+                .setContentInfo("Sent messages")
                 .addAction(R.drawable.ic_cancel_black_24dp,"Cancel",pendingIntent)
-                .setContentIntent(pendingIntent);
-        manger.notify(1,builder.build());
+                .setOngoing(true);
+        mNotificationManager.notify(++notificationIdCount,builder.build());
+        mNotificationsIds.put(phone,notificationIdCount);
+        mAllNotifications.put(notificationIdCount,builder);
     }
-    void sendMessage(){
+    private void sendMessage(){
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -64,23 +88,52 @@ public class SendMessageService extends Service {
 
     @Override
     public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "onCreate: Im in create");
-        showNotification();
-        sendMessage();
+        if(!isCreated){
+            isCreated=true;
+            super.onCreate();
+            mNotificationsIds =new HashMap<>();
+            mAllNotifications=new HashMap<>();
+            instance=this;
+            Log.d(TAG, "onCreate: Im in create");
+            sendMessage();
+            launchBroadcast();
+        }
+
+    }
+    public void startSendingMessages(String phone,int count,String message){
+        if(!notAlreadySending(phone)){
+            showNotification(phone,count);
+        }
+    }
+
+    private boolean notAlreadySending(String phone) {
+        return mNotificationsIds.containsKey(phone);
+    }
+
+    public static SendMessageService getInstance(){
+        return instance;
     }
 
     protected BroadcastReceiver rec=new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            unregisterReceiver(rec);
             Log.d(TAG, "onReceive: Stoping service");
-            stopSelf();
+            String phone=intent.getExtras().getString("phone");
+            int notificationNumber= mNotificationsIds.get(phone);
+            mNotificationsIds.remove(phone);
+            NotificationCompat.Builder builder=mAllNotifications.get(notificationNumber);
+            builder.setOngoing(false);
+            builder.setContentText("Canceled");
+            mNotificationManager.notify(notificationNumber,builder.build());
+            mNotificationManager.cancel(notificationNumber);
+            mAllNotifications.remove(notificationNumber);
+
         }
     };
 
     @Override
     public void onDestroy() {
+        unregisterReceiver(rec);
         Log.d(TAG, "onDestroy: destroyed");
         isRunning=false;
         super.onDestroy();
@@ -90,6 +143,12 @@ public class SendMessageService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return new LocalBinder();
+    }
+    private void launchBroadcast(){
+        sendBroadcast(new Intent(CommonConstants.SERVICE_CONTEXT_BROAD));
+    }
+    public class LocalBinder extends Binder{
+
     }
 }
