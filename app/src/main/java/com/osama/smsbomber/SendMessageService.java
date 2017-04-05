@@ -1,6 +1,7 @@
 package com.osama.smsbomber;
 
 import android.app.IntentService;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.support.annotation.Nullable;
@@ -28,6 +29,7 @@ public class SendMessageService extends IntentService {
     }
     private void showNotification(){
         NotificationManager manger=(NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Notification.Action action=new Notification.Action.Builder()
         NotificationCompat.Builder builder=new NotificationCompat.Builder(SmsBomber.getCtx())
                 .setSmallIcon(R.mipmap.ic_launcher_round)
                 .setContentText("03454315404 ")
