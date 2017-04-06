@@ -54,14 +54,6 @@ public class MainActivity extends AppCompatActivity {
         mainView=findViewById(R.id.main_view);
         registerReceiver(rec,new IntentFilter(CommonConstants.SERVICE_CONTEXT_BROAD));
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
         setUpRecentList();
     }
     private ServiceConnection connection=new ServiceConnection() {
@@ -144,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         if(phone.length()<8){
-            ((EditText)findViewById(R.id.number_edit_text)).setError("Count must be less than 500");
+            ((EditText)findViewById(R.id.number_edit_text)).setError("Input correct number.");
             return false;
         }
         return true;

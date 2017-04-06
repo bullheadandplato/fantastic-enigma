@@ -208,7 +208,7 @@ public class SendMessageService extends Service {
                 public void onReceive(Context arg0, Intent arg1) {
                     switch (getResultCode()) {
                         case RESULT_OK:
-                            sendSMS();
+                            innerSend();
                             publishProgress(++reverseCount);
                             break;
                         default:
