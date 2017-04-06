@@ -1,16 +1,21 @@
 package com.osama.smsbomber;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,6 +27,7 @@ import android.view.MenuItem;
 import android.widget.EditText;
 
 import java.util.ArrayList;
+import java.util.jar.Manifest;
 
 public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecentListView;
@@ -29,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private RecentDataSource mDataSource;
     private boolean isServiceStarted=false;
     private SendMessageService messageService;
+    private View mainView;
     Intent serviceIntent;
 
     private static final String TAG=MainActivity.class.getCanonicalName();
@@ -44,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
             startService(serviceIntent);
             isServiceStarted=true;
         }
+        mainView=findViewById(R.id.main_view);
         registerReceiver(rec,new IntentFilter(CommonConstants.SERVICE_CONTEXT_BROAD));
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -99,7 +107,17 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+    private static final int PERMISSION_CODE=454;
+
+    @TargetApi(23)
     public void sendButtonClick(View view){
+        if(Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP) {
+            //check permission
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.SEND_SMS}, PERMISSION_CODE);
+                return;
+            }
+        }
 
         try {
 
@@ -150,5 +168,15 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         Log.d(TAG, "onResume: binding service");
         bindService(serviceIntent, connection,BIND_ABOVE_CLIENT);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode==PERMISSION_CODE){
+            if(grantResults[0]!=PackageManager.PERMISSION_GRANTED){
+                Snackbar.make(mainView,"Need sms permission to work.",Snackbar.LENGTH_SHORT).show();
+            }
+        }
     }
 }
