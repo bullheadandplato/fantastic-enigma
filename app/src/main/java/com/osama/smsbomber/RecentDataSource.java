@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -43,6 +44,7 @@ public class RecentDataSource {
         cursor.close();
     }
     private RecentModel cursorToModel(Cursor cursor){
+        Log.d("fds", "cursorToModel: setting values: "+cursor.getString(0));
         RecentModel model=new RecentModel();
         model.setPhone(cursor.getString(0));
         model.setCount(cursor.getInt(1));
@@ -50,6 +52,7 @@ public class RecentDataSource {
     }
 
     public ArrayList<RecentModel> getModels() {
+        Log.d("fds", "getModels: model size is: "+mModels.get(0).getCount());
         return mModels;
     }
 }

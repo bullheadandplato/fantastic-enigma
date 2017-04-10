@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
         }
         mainView=findViewById(R.id.main_view);
         registerReceiver(rec,new IntentFilter(CommonConstants.SERVICE_CONTEXT_BROAD));
-
         setUpRecentList();
     }
     private ServiceConnection connection=new ServiceConnection() {
@@ -118,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
             String message = ((EditText) findViewById(R.id.message_edit_text)).getText().toString();
             if (isCorrectPhoneAndCount(phone, count)) {
                 messageService.startSendingMessages(phone, count, message);
+                mDataSource.insertRecent(phone,count);
             }
         }catch (Exception ex){
             ex.printStackTrace();
@@ -152,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         unbindService(connection);
+        mDataSource.close();
         super.onDestroy();
     }
 
@@ -159,7 +160,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume: binding service");
+        registerReceiver(rec,new IntentFilter(CommonConstants.SERVICE_CONTEXT_BROAD));
         bindService(serviceIntent, connection,BIND_ABOVE_CLIENT);
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(rec);
+        super.onPause();
     }
 
     @Override

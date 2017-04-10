@@ -54,6 +54,7 @@ public class SendMessageService extends Service {
         return START_STICKY;
     }
     private void showNotification(String phone,int count,String message){
+        Log.d(TAG, "showNotification: Id count is: "+notificationIdCount);
         registerReceiver(rec,new IntentFilter("SMSBomberFilter"));
         Intent cancelIntent=new Intent(this,IntentService.class);
         cancelIntent.setAction(CANCEL);
@@ -124,6 +125,7 @@ public class SendMessageService extends Service {
             mNotificationManager.cancel(notificationNumber);
             mAllNotifications.remove(notificationNumber);
             allDeliver.get(notificationNumber).cancel();
+            allDeliver.remove(notificationNumber);
 
         }
     };
@@ -157,38 +159,38 @@ public class SendMessageService extends Service {
         private int notificationId;
         private String phone;
         private String message;
-        private volatile boolean isCanceled=false;
-        private int totalMessages=0;
+        private volatile boolean isCanceled = false;
+        private int totalMessages = 0;
+        private Thread sendMessageThread;
 
-        SmsDeliveryController(int count,NotificationCompat.Builder bu,int not,String ph,String mes) {
-        this.count = count;
-        this.builder=bu;
-        this.notificationId=not;
-        this.phone=ph;
-        this.message=mes;
-            totalMessages=count;
-            Log.d(TAG, "SmsDeliveryController: count is: "+count);
-    }
+        SmsDeliveryController(int count, NotificationCompat.Builder bu, int not, String ph, String mes) {
+            this.count = count;
+            this.builder = bu;
+            this.notificationId = not;
+            this.phone = ph;
+            this.message = mes;
+            totalMessages = count;
+            Log.d(TAG, "SmsDeliveryController: count is: " + count);
+        }
 
-    //---sends an SMS message to another device--
-        private int reverseCount=0;
-    public void sendSMS() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-               innerSend();
-            }
-        }).start();
+        //---sends an SMS message to another device--
+        private int reverseCount = 0;
 
-    }
-    private void innerSend(){
-         String SENT = "SMS_SENT";
+        public void sendSMS() {
+            sendMessageThread=new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    innerSend();
+                }
+            });
+            sendMessageThread.start();
+        }
+
+        private void innerSend() {
+            Log.d(TAG, "innerSend: called");
+            String SENT = "SMS_SENT";
             String DELIVERED = "SMS_DELIVERED";
-        Log.d(TAG, "sendSMS: sending message");
-        while (count>0){
-            if(isCanceled){
-                break;
-            }
+            Log.d(TAG, "sendSMS: sending message");
             --count;
             PendingIntent sentPI = PendingIntent.getBroadcast(SmsBomber.getCtx(), 0,
                     new Intent(SENT), 0);
@@ -201,14 +203,14 @@ public class SendMessageService extends Service {
             SmsManager sms = SmsManager.getDefault();
             sms.sendTextMessage(phone, null, message, sentPI, deliveredPI);
         }
-
-    }
     private BroadcastReceiver xv=new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context arg0, Intent arg1) {
                     switch (getResultCode()) {
                         case RESULT_OK:
-                            innerSend();
+                            if(!isCanceled && count!=0) {
+                                innerSend();
+                            }
                             publishProgress(++reverseCount);
                             break;
                         default:
@@ -216,6 +218,9 @@ public class SendMessageService extends Service {
                 }
             };
     private void publishProgress(int i) {
+        if(isCanceled){
+            return;
+        }
         Log.d(TAG, "publishProgress: progress is: "+i);
         builder.setProgress(totalMessages,i,false);
         if(totalMessages==i){
@@ -223,13 +228,21 @@ public class SendMessageService extends Service {
             builder.mActions.clear();
             mNotificationManager.notify(notificationId,builder.build());
             mNotificationManager.cancel(notificationId);
+            mAllNotifications.remove(notificationId);
+            mNotificationsIds.remove(phone);
+            sendMessageThread.interrupt();
+            unregisterReceiver(xv);
             return;
         }
+        Log.d(TAG, "publishProgress: Notification id is: "+notificationId);
         mNotificationManager.notify(notificationId,builder.build());
     }
 
         public void cancel() {
+            Log.d(TAG, "cancel: cancel abc");
             isCanceled=true;
+            sendMessageThread.interrupt();
+            unregisterReceiver(xv);
         }
     }
 
